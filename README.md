@@ -1,2 +1,2 @@
 # WaveRNN-Pytorch
-Fatcord's Alternative WaveRNN (Faster training)
+Fatcord's [Alternative](https://github.com/fatchord/WaveRNN) WaveRNN (Faster training)
