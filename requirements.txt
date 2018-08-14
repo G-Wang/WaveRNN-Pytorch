@@ -1,2 +1,3 @@
 lws
 librosa
+tqdm
