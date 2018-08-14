@@ -11,3 +11,4 @@ class hparams:
     rescaling = False
     rescaling_max = 0.999
     allow_clipping_in_normalization = True
+    bits = 9
