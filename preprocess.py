@@ -33,10 +33,10 @@ def process_data(wav_dir, output_dir):
     for wav_file in tqdm(wav_files):
         # get the file id
         file_id = wav_file.split('/')[-1][:-4] # skip the .wav
-        #quant, mel = get_wav_mel(wav_dir + wav_file)
+        quant, mel = get_wav_mel(wav_dir + wav_file)
         # save
-        #np.save(output_dir+"/me/"+file_id+".npy", mel)
-        #np.save(output_dir+"/quant/"+file_id+".npy", quant)
+        np.save(output_dir+"mel/"+file_id+".npy", mel)
+        np.save(output_dir+"quant/"+file_id+".npy", quant)
         # add to dataset_ids
         dataset_ids.append(file_id)
 
@@ -65,6 +65,12 @@ if __name__=="__main__":
         print("\noutput path does not exit, creating....")
         os.mkdir(output_dir)
         os.mkdir(output_dir+"mel/")
+        os.mkdir(output_dir+"quant/")
+
+    elif not os.path.exists(output_dir+"mel/"):
+        os.mkdir(output_dir+"mel/")
+        
+    elif not os.path.exists(output_dir+"quant/"):
         os.mkdir(output_dir+"quant/")
 
     # process data
