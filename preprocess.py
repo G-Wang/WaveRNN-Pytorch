@@ -9,8 +9,10 @@ options:
 from docopt import docopt
 import numpy as np
 import math, pickle, os
-from deepvoice_audio import *
+from audio import *
 from hparams import hparams as hp
+from nnmnkwii import preprocessing as P
+from utils import *
 from tqdm import tqdm
 
 def get_wav_mel(path):
@@ -19,7 +21,10 @@ def get_wav_mel(path):
     """
     wav = load_wav(path)
     mel = melspectrogram(wav)
-    quant = (wav + 1.) * (2**hp.bits - 1) / 2
+    if hp.use_mu_law:
+        quant = P.mulaw_quantize(wav)
+    else:
+        quant = (wav + 1.) * (2**hp.bits - 1) / 2
     return quant, mel
 
 def process_data(wav_dir, output_dir):
@@ -30,9 +35,9 @@ def process_data(wav_dir, output_dir):
     dataset_ids = []
     # get list of wav files
     wav_files = os.listdir(wav_dir)
-    for wav_file in tqdm(wav_files):
+    for i, wav_file in enumerate(tqdm(wav_files)):
         # get the file id
-        file_id = wav_file.split('/')[-1][:-4] # skip the .wav
+        file_id = '{:d}'.format(i).zfill(5)
         quant, mel = get_wav_mel(wav_dir + wav_file)
         # save
         np.save(output_dir+"mel/"+file_id+".npy", mel)
@@ -55,10 +60,8 @@ if __name__=="__main__":
     output_dir = args["<output-dir>"]
 
     # check path name
-    if wav_dir[-1] != "/":
-        wav_dir += "/"
-    if output_dir[-1] != "/":
-        output_dir += "/"
+    wav_dir = check_path_name(wav_dir)
+    output_dir = check_path_name(output_dir)
 
     # check if output_dir exits, if not create
     if not os.path.exists(output_dir):
@@ -67,10 +70,10 @@ if __name__=="__main__":
         os.mkdir(output_dir+"mel/")
         os.mkdir(output_dir+"quant/")
 
-    elif not os.path.exists(output_dir+"mel/"):
+    if not os.path.exists(output_dir+"mel/"):
         os.mkdir(output_dir+"mel/")
         
-    elif not os.path.exists(output_dir+"quant/"):
+    if not os.path.exists(output_dir+"quant/"):
         os.mkdir(output_dir+"quant/")
 
     # process data
