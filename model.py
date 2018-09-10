@@ -2,6 +2,7 @@ import torch
 from hparams import hparams as hp
 from deepvoice_audio import *
 from torch.utils.data import DataLoader, Dataset
+from nnmnkwii import preprocessing as P
 import numpy as np
 
 class ResBlock(nn.Module) :
@@ -83,7 +84,10 @@ class Model(nn.Module) :
     def __init__(self, rnn_dims, fc_dims, bits, pad, upsample_factors,
                  feat_dims, compute_dims, res_out_dims, res_blocks):
         super().__init__()
-        self.n_classes = 2**bits
+        if hp.use_mu_law:
+            self.n_classes = 256
+        else:
+            self.n_classes = 2**bits
         self.rnn_dims = rnn_dims
         self.aux_dims = res_out_dims // 4
         self.upsample = UpsampleNetwork(feat_dims, upsample_factors, compute_dims, 
@@ -178,12 +182,14 @@ class Model(nn.Module) :
                 x = self.fc3(x)
                 posterior = F.softmax(x, dim=1).view(-1)
                 distrib = torch.distributions.Categorical(posterior)
-                sample = 2 * distrib.sample().float() / (self.n_classes - 1.) - 1.
+                if hp.use_mu_law:
+                    # if we use mu-law, will need to invert the mu-law network output
+                    # Note this could change if we work completely in mu-law encoded audio
+                    sample = P.inv_mulaw_quantize(distrib.sample().float())
+                else:
+                    sample = 2 * distrib.sample().float() / (self.n_classes - 1.) - 1.
                 output.append(sample)
                 x = torch.FloatTensor([[sample]]).cuda()
-                if i % 100 == 0 :
-                    speed = int((i + 1) / (time.time() - start))
-                    display('%i/%i -- Speed: %i samples/sec', (i + 1, seq_len, speed))
         output = torch.stack(output).cpu().numpy()
         librosa.output.write_wav(save_path, output, sample_rate)
         self.train()

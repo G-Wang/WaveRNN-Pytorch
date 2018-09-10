@@ -24,3 +24,11 @@ class hparams:
     rescaling_max = 0.999
     allow_clipping_in_normalization = True
     bits = 9
+
+    # training parameters
+    batch_size = 16
+    # note the rnn's don't train too well with very long seq_len
+    # it's recommended to keep them no longer than 6
+    seq_len = 5
+    epochs = 5000
+    learning_rate = 1e-4
