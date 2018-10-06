@@ -1,15 +1,28 @@
 class hparams:
 
     # option parameters
-    # use mu-law encoding for audio. Note mu-law encodes audio into 256 logits
-    # if not mu-law, the specified bit rate will be used in the audio parameter section
-    use_mu_law = True # use mu-law encoding for audio
 
-    # note r9r9's deepvoice3 preprocessing uses a slightly different preprocessing
-    # from Fatcord's version.
-    use_r9r9_deepvoice = True 
-    
-    # audio parameters
+    # Input type:
+    # 1. raw [-1, 1]
+    # 2. mulaw-quantize [0, 256]
+    # 3. bits [0, 512]
+    #
+    # If input_type is raw, network assumes scalar input and output scalar value sampled
+    # from a single Beta distribution, otherwise one-hot input and softmax outputs are asumed.
+    input_type = 'raw'
+    #
+    # distribution type, currently supports only 'beta'
+    distribution = 'beta'
+    #
+    # mu_law dimension can be changed, but make sure input_type is mulaw-quantize
+    mu = 256
+    #
+    # for Fatcord's original 9 bit audio, specify the audio bit rate. Note this corresponds to network output
+    # of size 2**bits, so 9 bits would be 512 output, etc.
+    bits = 9
+    # note: r9r9's deepvoice3 preprocessing is used instead of Fatcord's original.
+    #     
+    # audio processing parameters
     num_mels = 80
     fmin = 125
     fmax = 7600
@@ -23,7 +36,7 @@ class hparams:
     rescaling = False
     rescaling_max = 0.999
     allow_clipping_in_normalization = True
-    bits = 9
+    
 
     # training parameters
     batch_size = 16

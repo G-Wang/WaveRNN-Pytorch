@@ -21,11 +21,18 @@ def get_wav_mel(path):
     """
     wav = load_wav(path)
     mel = melspectrogram(wav)
-    if hp.use_mu_law:
-        quant = P.mulaw_quantize(wav)
+    if hp.input_type == 'raw':
+        return wav.astype(np.float32), mel
+    elif hp.input_type == 'mulaw-quantize':
+        quant = P.mulaw_quantize(wav, hp.mu)
+        return quant, mel
+    elif hp.input_type == 'bits':
+        quant = quantize(wav)
+        return quant, mel
     else:
-        quant = (wav + 1.) * (2**hp.bits - 1) / 2
-    return quant, mel
+        raise ValueError("hp.input_type {} not recognized".format(hp.input_type))
+
+
 
 def process_data(wav_dir, output_dir):
     """given wav directory and output directory, process wav files and save quantized wav and mel
@@ -63,18 +70,16 @@ if __name__=="__main__":
     wav_dir = check_path_name(wav_dir)
     output_dir = check_path_name(output_dir)
 
-    # check if output_dir exits, if not create
-    if not os.path.exists(output_dir):
-        print("\noutput path does not exit, creating....")
-        os.mkdir(output_dir)
-        os.mkdir(output_dir+"mel/")
-        os.mkdir(output_dir+"quant/")
-
-    if not os.path.exists(output_dir+"mel/"):
-        os.mkdir(output_dir+"mel/")
-        
-    if not os.path.exists(output_dir+"quant/"):
-        os.mkdir(output_dir+"quant/")
+    # create dir
+    os.mkdir(output_dir)
+    os.mkdir(output_dir+"mel/")
+    os.mkdir(output_dir+"quant/")
 
     # process data
     process_data(wav_dir, output_dir)
+
+
+
+def test_get_wav_mel():
+    wav, mel = get_wav_mel('sample.wav')
+    print(wav.shape, mel.shape)

@@ -6,6 +6,7 @@ from scipy import signal
 from hparams import hparams
 from scipy.io import wavfile
 
+# r9r9 preprocessing
 import lws
 
 
@@ -92,9 +93,20 @@ def _denormalize(S):
     return (np.clip(S, 0, 1) * -hparams.min_level_db) + hparams.min_level_db
 
 
+# Fatcord's preprocessing
+def quantize(x):
+    """quantize audio signal
+
+    """
+    quant = (x + 1.) * (2**hparams.bits - 1) / 2
+    return quant.astype(np.int)
+
+
 # testing
 def test_everything():
-    wav = load_wav("sample.wav")
+    wav = np.random.randn(12000,)
     mel = melspectrogram(wav)
     spec = spectrogram(wav)
-    print(wav.shape, mel.shape, spec.shape)
+    quant = quantize(wav)
+    print(wav.shape, mel.shape, spec.shape, quant.shape)
+    print(quant.max(), quant.min(), mel.max(), mel.min(), spec.max(), spec.min())
