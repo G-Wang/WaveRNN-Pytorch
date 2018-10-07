@@ -11,7 +11,7 @@ import numpy as np
 import math, pickle, os
 from audio import *
 from hparams import hparams as hp
-from nnmnkwii import preprocessing as P
+#from nnmnkwii import preprocessing as P
 from utils import *
 from tqdm import tqdm
 
@@ -34,14 +34,17 @@ def get_wav_mel(path):
 
 
 
-def process_data(wav_dir, output_dir):
-    """given wav directory and output directory, process wav files and save quantized wav and mel
-    spectrogram to output directory
 
+def process_data(wav_dir, output_dir):
+    """
+    given wav directory and output directory, process wav files and save quantized wav and mel
+    spectrogram to output directory
     """
     dataset_ids = []
     # get list of wav files
     wav_files = os.listdir(wav_dir)
+    # check wav_file
+    assert len(wav_files) != 0 or wav_files[0][-4:] == '.wav', "no wav files found!"
     for i, wav_file in enumerate(tqdm(wav_files)):
         # get the file id
         file_id = '{:d}'.format(i).zfill(5)
@@ -55,7 +58,7 @@ def process_data(wav_dir, output_dir):
     # save dataset_ids
     with open(output_dir + 'dataset_ids.pkl', 'wb') as f:
         pickle.dump(dataset_ids, f)
-
+    
     print("\npreprocessing done, total processed wav files:{}." 
     "\nProcessed files are located in:{}".format(len(wav_files), os.path.abspath(output_dir)))
 
@@ -71,9 +74,14 @@ if __name__=="__main__":
     output_dir = check_path_name(output_dir)
 
     # create dir
-    os.mkdir(output_dir)
-    os.mkdir(output_dir+"mel/")
-    os.mkdir(output_dir+"quant/")
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    
+    if not os.path.exists(output_dir+"mel/"):
+        os.mkdir(output_dir+"mel/")
+
+    if not os.path.exists(output_dir+"quant/"):
+        os.mkdir(output_dir+"quant/")
 
     # process data
     process_data(wav_dir, output_dir)
