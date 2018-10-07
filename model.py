@@ -1,8 +1,9 @@
 import torch
+from torch import nn
 from hparams import hparams as hp
-from deepvoice_audio import *
 from torch.utils.data import DataLoader, Dataset
-from nnmnkwii import preprocessing as P
+from distributions import sample_from_beta_dist
+from utils import num_params
 import numpy as np
 
 class ResBlock(nn.Module) :
@@ -84,10 +85,12 @@ class Model(nn.Module) :
     def __init__(self, rnn_dims, fc_dims, bits, pad, upsample_factors,
                  feat_dims, compute_dims, res_out_dims, res_blocks):
         super().__init__()
-        if hp.use_mu_law:
-            self.n_classes = 256
-        else:
+        if hp.input_type == 'raw':
+            self.n_classes = 2
+        elif hp.input_type == 'bits':
             self.n_classes = 2**bits
+        else:
+            raise ValueError("input_type: {hp.input_type} not supported")
         self.rnn_dims = rnn_dims
         self.aux_dims = res_out_dims // 4
         self.upsample = UpsampleNetwork(feat_dims, upsample_factors, compute_dims, 
@@ -128,8 +131,17 @@ class Model(nn.Module) :
         
         x = torch.cat([x, a4], dim=2)
         x = F.relu(self.fc2(x))
-        return F.log_softmax(self.fc3(x), dim=-1)
-    
+
+        x = self.fc3(x)
+
+        if hp.input_type == 'raw':
+            return x
+        elif hp.input_type == 'bits':
+            return F.log_softmax(x, dim=-1)
+        else:
+            raise ValueError("input_type: {hp.input_type} not supported")
+
+
     def preview_upsampling(self, mels) :
         mels, aux = self.upsample(mels)
         return mels, aux
@@ -180,18 +192,16 @@ class Model(nn.Module) :
                 x = torch.cat([x, a4_t], dim=1)
                 x = F.relu(self.fc2(x))
                 x = self.fc3(x)
-                posterior = F.softmax(x, dim=1).view(-1)
-                distrib = torch.distributions.Categorical(posterior)
-                if hp.use_mu_law:
-                    # if we use mu-law, will need to invert the mu-law network output
-                    # Note this could change if we work completely in mu-law encoded audio
-                    sample = P.inv_mulaw_quantize(distrib.sample().float())
-                else:
+                if hp.input_type == 'raw':
+                    sample = sample_from_beta_dist(x.unsqueeze(0))
+                    sample = sample.view(-1)
+                elif hp.input_type == 'bits':
+                    posterior = F.softmax(x, dim=1).view(-1)
+                    distrib = torch.distributions.Categorical(posterior)
                     sample = 2 * distrib.sample().float() / (self.n_classes - 1.) - 1.
                 output.append(sample)
                 x = torch.FloatTensor([[sample]]).cuda()
         output = torch.stack(output).cpu().numpy()
-        librosa.output.write_wav(save_path, output, sample_rate)
         self.train()
         return output
     
@@ -203,3 +213,10 @@ class Model(nn.Module) :
         gru_cell.bias_ih.data = gru.bias_ih_l0.data
         return gru_cell
 
+
+
+def test_build_model():
+    model = Model(hp.rnn_dims, hp.fc_dims, hp.bits,
+        hp.pad, hp.upsample_factors, hp.num_mels,
+        hp.compute_dims, hp.res_out_dims, hp.res_blocks).cuda()
+    print(vars(model))
