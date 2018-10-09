@@ -128,10 +128,11 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
     else:
         raise ValueError(f"input_type:{hp.input_type} not supported")
 
-    running_loss = 0
+    
 
     global global_step, global_epoch, global_test_step
     while global_epoch < hp.nepochs:
+        running_loss = 0
         for i, (x, m, y) in enumerate(tqdm(data_loader)):
             x, m, y = x.to(device), m.to(device), y.to(device)
             y_hat = model(x, m)
@@ -161,8 +162,9 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
             # reset global_test_step status after evaluation
             if global_test_step is True:
                 global_test_step = False
-
             global_step += 1
+        
+        print("epoch:{}, running loss:{}, average loss:{}".format(global_epoch, running_loss, avg_loss))
         global_epoch += 1
 
 
