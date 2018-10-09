@@ -11,15 +11,15 @@ import pickle
 class AudiobookDataset(Dataset):
     def __init__(self, data_path):
         self.path = os.path.join(data_path, "")
-        with open(os.path.join(self.path,f'dataset_ids.pkl'), 'rb') as f:
+        with open(os.path.join(self.path,'dataset_ids.pkl'), 'rb') as f:
             self.metadata = pickle.load(f)
         self.mel_path = os.path.join(data_path, "mel")
         self.wav_path = os.path.join(data_path, "wav")
         
     def __getitem__(self, index):
         file = self.metadata[index]
-        m = np.load(os.path.join(self.mel_path,f'{file}.npy'))
-        x = np.load(os.path.join(self.wav_path,f'{file}.npy'))
+        m = np.load(os.path.join(self.mel_path,'{}.npy'.format(file)))
+        x = np.load(os.path.join(self.wav_path,'{}.npy'.format(file)))
         return m, x
 
     def __len__(self):
@@ -92,7 +92,7 @@ def test_collate():
     data_path = "data_dir/"
     print(hp.seq_len)
     
-    with open(f'{data_id_path}dataset_ids.pkl', 'rb') as f:
+    with open('{}dataset_ids.pkl'.format(data_id_path), 'rb') as f:
         dataset_ids = pickle.load(f)
     dataset = AudiobookDataset(data_path)
     print(len(dataset))

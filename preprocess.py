@@ -1,11 +1,13 @@
 """
 Preprocess dataset
 
-usage: preproess.py [options] <wav-dir> <output-dir>
+usage: preproess.py [options] <wav-dir>
 
 options:
-    -h, --help      Show help message.
+     --output-dir=<dir>      Directory where processed outputs are saved. [default: data_dir].
+    -h, --help              Show help message.
 """
+import os
 from docopt import docopt
 import numpy as np
 import math, pickle, os
@@ -35,7 +37,7 @@ def get_wav_mel(path):
 
 
 
-def process_data(wav_dir, output_dir):
+def process_data(wav_dir, output_path, mel_path, wav_path):
     """
     given wav directory and output directory, process wav files and save quantized wav and mel
     spectrogram to output directory
@@ -45,46 +47,54 @@ def process_data(wav_dir, output_dir):
     wav_files = os.listdir(wav_dir)
     # check wav_file
     assert len(wav_files) != 0 or wav_files[0][-4:] == '.wav', "no wav files found!"
+    # create training and testing splits
+    test_wav_files = wav_files[:4]
+    wav_files = wav_files[4:]
     for i, wav_file in enumerate(tqdm(wav_files)):
         # get the file id
         file_id = '{:d}'.format(i).zfill(5)
-        quant, mel = get_wav_mel(wav_dir + wav_file)
+        wav, mel = get_wav_mel(os.path.join(wav_dir,wav_file))
         # save
-        np.save(output_dir+"mel/"+file_id+".npy", mel)
-        np.save(output_dir+"quant/"+file_id+".npy", quant)
+        np.save(os.path.join(mel_path,file_id+".npy"), mel)
+        np.save(os.path.join(wav_path,file_id+".npy"), wav)
         # add to dataset_ids
         dataset_ids.append(file_id)
 
     # save dataset_ids
-    with open(output_dir + 'dataset_ids.pkl', 'wb') as f:
+    with open(os.path.join(output_path,'dataset_ids.pkl'), 'wb') as f:
         pickle.dump(dataset_ids, f)
+
+    # process testing_wavs
+    test_path = os.path.join(output_path,'test_data')
+    os.makedirs(test_path, exist_ok=True)
+    for i, wav_file in enumerate(test_wav_files):
+        wav, mel = get_wav_mel(os.path.join(wav_dir,wav_file))
+        # save test_wavs
+        np.save(os.path.join(test_path,"test_{}_mel.npy".format(i)),mel)
+        np.save(os.path.join(test_path,"test_{}_wav.npy".format(i)),wav)
+
     
-    print("\npreprocessing done, total processed wav files:{}." 
-    "\nProcessed files are located in:{}".format(len(wav_files), os.path.abspath(output_dir)))
+    print("\npreprocessing done, total processed wav files:{}.\nProcessed files are located in:{}".format(len(wav_files), os.path.abspath(output_path)))
 
 
 
 if __name__=="__main__":
     args = docopt(__doc__)
     wav_dir = args["<wav-dir>"]
-    output_dir = args["<output-dir>"]
+    output_dir = args["--output-dir"]
 
-    # check path name
-    wav_dir = check_path_name(wav_dir)
-    output_dir = check_path_name(output_dir)
+    # create paths
+    output_path = os.path.join(output_dir,"")
+    mel_path = os.path.join(output_dir,"mel")
+    wav_path = os.path.join(output_dir,"wav")
 
-    # create dir
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-    
-    if not os.path.exists(output_dir+"mel/"):
-        os.mkdir(output_dir+"mel/")
-
-    if not os.path.exists(output_dir+"quant/"):
-        os.mkdir(output_dir+"quant/")
+    # create dirs
+    os.makedirs(output_path, exist_ok=True)
+    os.makedirs(mel_path, exist_ok=True)
+    os.makedirs(wav_path, exist_ok=True)
 
     # process data
-    process_data(wav_dir, output_dir)
+    process_data(wav_dir, output_path, mel_path, wav_path)
 
 
 
