@@ -1,3 +1,4 @@
+import torch
 from torch.distributions import Beta
 
 def sample_from_beta_dist(y_hat):

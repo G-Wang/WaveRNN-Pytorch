@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 from hparams import hparams as hp
 from torch.utils.data import DataLoader, Dataset
 from distributions import sample_from_beta_dist
@@ -214,6 +215,15 @@ class Model(nn.Module) :
         return gru_cell
 
 
+def build_model():
+    """build model with hparams settings
+
+    """
+    model = Model(hp.rnn_dims, hp.fc_dims, hp.bits,
+        hp.pad, hp.upsample_factors, hp.num_mels,
+        hp.compute_dims, hp.res_out_dims, hp.res_blocks)
+
+    return model 
 
 def test_build_model():
     model = Model(hp.rnn_dims, hp.fc_dims, hp.bits,

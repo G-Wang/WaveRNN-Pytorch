@@ -50,15 +50,16 @@ class hparams:
     #----------------
     # training parameters
     batch_size = 16
-    epochs = 5000
+    nepochs = 5000
     # seq_len_factor can be adjusted to increase training sequence length (will increase GPU usage)
     seq_len_factor = 5
     seq_len = seq_len_factor * hop_size
     batch_size = 16
-
+    grad_norm = 1.0
     initial_learning_rate=1e-3
     adam_beta1=0.9
     adam_beta2=0.999
     adam_eps=1e-8
     amsgrad=False
+    weight_decay = 0.0
     #-----------------
