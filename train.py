@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 import numpy as np
 import matplotlib.pyplot as plt
+import librosa
 
 from model import build_model
 
@@ -37,7 +38,7 @@ use_cuda = torch.cuda.is_available()
 
 def save_checkpoint(device, model, optimizer, step, checkpoint_dir, epoch):
     checkpoint_path = join(
-        checkpoint_dir, "checkpoint_step{:09d}.pth".format(global_step))
+        checkpoint_dir, "checkpoint_step{:09d}.pth".format(step))
     optimizer_state = optimizer.state_dict()
     global global_test_step
     torch.save({
@@ -90,8 +91,32 @@ def test_save_checkpoint():
     model = load_checkpoint(checkpoint_path+"checkpoint_step000000000.pth", model, optimizer, False)
 
 
+def evaluate_model(model, data_loader, checkpoint_dir, limit_eval_to=1):
+    """evaluate model and save generated wav and plot
 
-def train_loop(device, model, data_loaders, optimizer, checkpoint_path=None):
+    """
+    test_path = data_loader.dataset.test_path
+    test_files = os.listdir(test_path)
+    counter = 0
+    output_dir = os.path.join(checkpoint_dir,'eval')
+    for f in test_files:
+        if f[-7:] == "mel.npy":
+            mel = np.load(os.path.join(test_path,f))
+            wav = model.generate(mel)
+            # save wav
+            wav_path = os.path.join(output_dir,"checkpoint_step{:09d}_wav_{}.wav".format(global_step,counter))
+            librosa.output.write_wav(wav_path, wav, sr=hp.sample_rate)
+            # save wav plot
+            fig_path = os.path.join(output_dir,"checkpoint_step{:09d}_wav_{}.png".format(global_step,counter))
+            fig = plt.plot(wav.reshape(-1))
+            plt.savefig(fig_path)
+            counter += 1
+        # stop evaluation early via limit_eval_to
+        if counter >= limit_eval_to:
+            break
+
+
+def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
     """Main training loop.
 
     """
@@ -104,11 +129,10 @@ def train_loop(device, model, data_loaders, optimizer, checkpoint_path=None):
         raise ValueError(f"input_type:{hp.input_type} not supported")
 
     running_loss = 0
-    print(hp.noam_warm_up_steps)
 
     global global_step, global_epoch, global_test_step
     while global_epoch < hp.nepochs:
-        for i, (x, m, y) in enumerate(tqdm(data_loaders)):
+        for i, (x, m, y) in enumerate(tqdm(data_loader)):
             x, m, y = x.to(device), m.to(device), y.to(device)
             y_hat = model(x, m)
             y = y.unsqueeze(-1)
@@ -125,8 +149,22 @@ def train_loop(device, model, data_loaders, optimizer, checkpoint_path=None):
 
             running_loss += loss.item()
             avg_loss = running_loss / (i+1)
+            # saving checkpoint if needed
+            if global_step != 0 and global_step % hp.save_every_step == 0:
+                save_checkpoint(device, model, optimizer, global_step, checkpoint_dir, global_epoch)
+            # evaluate model if needed
+            if global_step != 0 and global_test_step !=True and global_step % hp.evaluate_every_step == 0:
+                print("step {}, evaluating model: generating wav from mel...".format(global_step))
+                evaluate_model(model, data_loader, checkpoint_dir)
+                print("evaluation finished, resuming training...")
+
+            # reset global_test_step status after evaluation
+            if global_test_step is True:
+                global_test_step = False
+
             global_step += 1
         global_epoch += 1
+
 
 
 if __name__=="__main__":
@@ -138,6 +176,7 @@ if __name__=="__main__":
 
     # make dirs, load dataloader and set up device
     os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(os.path.join(checkpoint_dir,'eval'), exist_ok=True)
     dataset = AudiobookDataset(data_root)
     if hp.input_type == 'raw':
         collate_fn = raw_collate
@@ -163,10 +202,12 @@ if __name__=="__main__":
     else:
         model = load_checkpoint(checkpoint_path, model, optimizer, False)
         print(f"loading model from checkpoint:{checkpoint_path}")
+        # set global_test_step to True so we don't evaluate right when we load in the model
+        global_test_step = True
 
     # main train loop
     try:
-        train_loop(device, model, data_loader, optimizer)
+        train_loop(device, model, data_loader, optimizer, checkpoint_dir)
     except KeyboardInterrupt:
         print("Interrupted!")
         pass
@@ -174,5 +215,26 @@ if __name__=="__main__":
         print("saving model....")
         save_checkpoint(device, model, optimizer, global_step, checkpoint_dir, global_epoch)
     
+
+def test_eval():
+    data_root = "data_dir"
+    dataset = AudiobookDataset(data_root)
+    if hp.input_type == 'raw':
+        collate_fn = raw_collate
+    elif hp.input_type == 'bits':
+        collate_fn = discrete_collate
+    else:
+        raise ValueError(f"input_type:{hp.input_type} not supported")
+    data_loader = DataLoader(dataset, collate_fn=collate_fn, shuffle=True, num_workers=0, batch_size=hp.batch_size)
+    device = torch.device("cuda" if use_cuda else "cpu")
+    print(f"using device:{device}")
+
+    # build model, create optimizer
+    model = build_model().to(device)
+
+    evaluate_model(model, data_loader)
+
+    
+
     
 

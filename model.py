@@ -5,6 +5,8 @@ from hparams import hparams as hp
 from torch.utils.data import DataLoader, Dataset
 from distributions import sample_from_beta_dist
 from utils import num_params
+
+from tqdm import tqdm
 import numpy as np
 
 class ResBlock(nn.Module) :
@@ -147,14 +149,13 @@ class Model(nn.Module) :
         mels, aux = self.upsample(mels)
         return mels, aux
     
-    def generate(self, mels, save_path) :
+    def generate(self, mels) :
         self.eval()
         output = []
         rnn1 = self.get_gru_cell(self.rnn1)
         rnn2 = self.get_gru_cell(self.rnn2)
         
         with torch.no_grad() :
-            start = time.time()
             x = torch.zeros(1, 1).cuda()
             h1 = torch.zeros(1, self.rnn_dims).cuda()
             h2 = torch.zeros(1, self.rnn_dims).cuda()
@@ -170,7 +171,7 @@ class Model(nn.Module) :
             
             seq_len = mels.size(1)
             
-            for i in range(seq_len) :
+            for i in tqdm(range(seq_len)) :
 
                 m_t = mels[:, i, :]
                 a1_t = a1[:, i, :]

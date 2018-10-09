@@ -15,6 +15,7 @@ class AudiobookDataset(Dataset):
             self.metadata = pickle.load(f)
         self.mel_path = os.path.join(data_path, "mel")
         self.wav_path = os.path.join(data_path, "wav")
+        self.test_path = os.path.join(data_path, "test")
         
     def __getitem__(self, index):
         file = self.metadata[index]

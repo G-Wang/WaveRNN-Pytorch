@@ -65,7 +65,7 @@ def process_data(wav_dir, output_path, mel_path, wav_path):
         pickle.dump(dataset_ids, f)
 
     # process testing_wavs
-    test_path = os.path.join(output_path,'test_data')
+    test_path = os.path.join(output_path,'test')
     os.makedirs(test_path, exist_ok=True)
     for i, wav_file in enumerate(test_wav_files):
         wav, mel = get_wav_mel(os.path.join(wav_dir,wav_file))
