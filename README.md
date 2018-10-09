@@ -4,6 +4,7 @@ This repository contains Fatcord's [Alternative](https://github.com/fatchord/Wav
 This repo refracts the code and adds slight modifications, and removes running on Jupyter notebook.
 # Highlights
 * support raw audio wav modelling (via a single Beta Distribution)
+* relatively fast synthesis speed without much optimization yet (around 2000 samples/sec on GTX 1060 Ti, 16 GB ram, i5 processor)
 * support Fatcord's original quantized (9-bit) wav modelling
 
 # Audio Samples
@@ -58,6 +59,13 @@ Example 2: Restoring training from checkpoint
 ```
 python train.py data_dir --checkpoint=checkpoints/checkpoint0010000.pth
 ```
+Evaluation `.wav` files and plots are saved in `checkpoints/eval`.
+
+# WIP
+- [ ] optimize learning rate schedule
+- [ ] optimize training hyperparameters (seq_len and batch_size)
+- [ ] batch generation for synthesis speedup
+- [ ] model pruning
 
 
 
