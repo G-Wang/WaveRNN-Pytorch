@@ -28,6 +28,7 @@ from model import build_model
 from distributions import Beta_MLE_Loss
 from dataset import raw_collate, discrete_collate, AudiobookDataset
 from hparams import hparams as hp
+from lrschedule import noam_learning_rate_decay
 
 global_step = 0
 global_epoch = 0
@@ -103,6 +104,7 @@ def train_loop(device, model, data_loaders, optimizer, checkpoint_path=None):
         raise ValueError(f"input_type:{hp.input_type} not supported")
 
     running_loss = 0
+    print(hp.noam_warm_up_steps)
 
     global global_step, global_epoch, global_test_step
     while global_epoch < hp.nepochs:
@@ -111,6 +113,10 @@ def train_loop(device, model, data_loaders, optimizer, checkpoint_path=None):
             y_hat = model(x, m)
             y = y.unsqueeze(-1)
             loss = criterion(y_hat, y)
+            # calculate learning rate and update learning rate
+            current_lr = noam_learning_rate_decay(hp.initial_learning_rate, global_step, hp.noam_warm_up_steps)
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = current_lr
             optimizer.zero_grad()
             loss.backward()
             # clip gradient norm

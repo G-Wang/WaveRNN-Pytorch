@@ -56,7 +56,9 @@ class hparams:
     seq_len = seq_len_factor * hop_size
     batch_size = 16
     grad_norm = 1.0
+    #learning rate parameters
     initial_learning_rate=1e-3
+    noam_warm_up_steps = 2000 * (batch_size // 16)
     adam_beta1=0.9
     adam_beta2=0.999
     adam_eps=1e-8
