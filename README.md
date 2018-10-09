@@ -20,7 +20,7 @@ Ensure above requirements are met.
 ```
 git clone https://github.com/G-Wang/WaveRNN-Pytorch.git
 cd WaveRNN-Pytorch
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 # Usage
@@ -30,6 +30,7 @@ Before running scripts, one can adjust hyperparameters in `hparams.py`.
 Some hyperparameters that you might want to adjust:
 * `batch_size`
 * `save_every_step` (checkpoint saving frequency)
+* `evaluate_every_step` (evaluation frequency)
 * `seq_len_factor` (sequence length of training audio, the longer the more GPU it takes)
 ## 2. Preprocessing
 This function processes raw wav files into corresponding mel-spectrogram and wav files according to the audio processing hyperparameters.
@@ -51,6 +52,7 @@ Example 1: starting a new model for training
 ```
 python train.py data_dir
 ```
+`data_dir` is the directory containing the processed files.
 
 Example 2: Restoring training from checkpoint
 ```
