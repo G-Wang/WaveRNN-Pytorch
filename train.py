@@ -26,7 +26,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from model import build_model
-from distributions import Beta_MLE_Loss
+from distributions import beta_mle_loss
 from dataset import raw_collate, discrete_collate, AudiobookDataset
 from hparams import hparams as hp
 from lrschedule import noam_learning_rate_decay
@@ -110,6 +110,8 @@ def evaluate_model(model, data_loader, checkpoint_dir, limit_eval_to=1):
             fig_path = os.path.join(output_dir,"checkpoint_step{:09d}_wav_{}.png".format(global_step,counter))
             fig = plt.plot(wav.reshape(-1))
             plt.savefig(fig_path)
+            # clear fig to drawing to the same plot
+            plt.clf()
             counter += 1
         # stop evaluation early via limit_eval_to
         if counter >= limit_eval_to:
@@ -122,7 +124,7 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
     """
     # create loss and put on device
     if hp.input_type == 'raw':
-        criterion = Beta_MLE_Loss
+        criterion = beta_mle_loss
     elif hp.input_type == "bits":
         criterion = F.nll_loss
     else:
@@ -164,7 +166,7 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
                 global_test_step = False
             global_step += 1
         
-        print("epoch:{}, running loss:{}, average loss:{}".format(global_epoch, running_loss, avg_loss))
+        print("epoch:{}, running loss:{}, average loss:{}, current lr:{}".format(global_epoch, running_loss, avg_loss, current_lr))
         global_epoch += 1
 
 

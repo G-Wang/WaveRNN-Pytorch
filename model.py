@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from hparams import hparams as hp
 from torch.utils.data import DataLoader, Dataset
-from distributions import sample_from_beta_dist
+from distributions import sample_from_beta_dist, sample_from_discretized_mix_logistic
 from utils import num_params
 
 from tqdm import tqdm
@@ -90,6 +90,9 @@ class Model(nn.Module) :
         super().__init__()
         if hp.input_type == 'raw':
             self.n_classes = 2
+        elif hp.input_type == 'mixture':
+            # mixture requires multiple of 3, default at 10 component mixture, i.e 3 x 10 = 30
+            self.n_classes = 30
         elif hp.input_type == 'bits':
             self.n_classes = 2**bits
         else:
@@ -196,12 +199,13 @@ class Model(nn.Module) :
                 x = self.fc3(x)
                 if hp.input_type == 'raw':
                     sample = sample_from_beta_dist(x.unsqueeze(0))
-                    sample = sample.view(-1)
+                elif hp.input_type == 'mixture':
+                    sample = sample_from_discretized_mix_logistic(x.unsqueeze(-1),hp.log_scale_min)
                 elif hp.input_type == 'bits':
                     posterior = F.softmax(x, dim=1).view(-1)
                     distrib = torch.distributions.Categorical(posterior)
                     sample = 2 * distrib.sample().float() / (self.n_classes - 1.) - 1.
-                output.append(sample)
+                output.append(sample.view(-1))
                 x = torch.FloatTensor([[sample]]).cuda()
         output = torch.stack(output).cpu().numpy()
         self.train()
@@ -220,6 +224,14 @@ def build_model():
     """build model with hparams settings
 
     """
+    if hp.input_type == 'raw':
+        print('building model with Beta distribution output')
+    elif hp.input_type == 'mixture':
+        print("building model with mixture of logistic output")
+    elif hp.input_type == 'bits':
+        print("building model with quantized bit audio")
+    else:
+        raise ValueError('input_type provided not supported')
     model = Model(hp.rnn_dims, hp.fc_dims, hp.bits,
         hp.pad, hp.upsample_factors, hp.num_mels,
         hp.compute_dims, hp.res_out_dims, hp.res_blocks)

@@ -4,14 +4,15 @@ class hparams:
 
     # Input type:
     # 1. raw [-1, 1]
-    # 2. bits [0, 512]
+    # 2. mixture [-1, 1]
+    # 3. bits [0, 512]
     #
-    # If input_type is raw, network assumes scalar input and output scalar value sampled
-    # from a single Beta distribution, otherwise one-hot input and softmax outputs are asumed.
     input_type = 'raw'
     #
-    # distribution type, currently supports only 'beta'
-    distribution = 'beta'
+    # distribution type, currently supports only 'beta' and 'mixture'
+    distribution = 'beta' # or "mixture"
+    log_scale_min = -32.23619130191664 # = float(np.log(1e-7))
+    quantize_channels = 65536 # quantize channel used for compute loss for mixture of logistics
     #
     # for Fatcord's original 9 bit audio, specify the audio bit rate. Note this corresponds to network output
     # of size 2**bits, so 9 bits would be 512 output, etc.
@@ -52,9 +53,9 @@ class hparams:
     batch_size = 16
     nepochs = 5000
     save_every_step = 5000
-    evaluate_every_step = 5000
+    evaluate_every_step = 1000
     # seq_len_factor can be adjusted to increase training sequence length (will increase GPU usage)
-    seq_len_factor = 5
+    seq_len_factor = 10
     seq_len = seq_len_factor * hop_size
     batch_size = 16
     grad_norm = 1.0
