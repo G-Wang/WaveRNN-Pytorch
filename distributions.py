@@ -55,13 +55,13 @@ def log_sum_exp(x):
 
 
 def discretized_mix_logistic_loss(y_hat, y, num_classes=256,
-                                  log_scale_min=-7.0, reduce=True):
+                                  log_scale_min=hp.log_scale_min, reduce=True):
     """Discretized mixture of logistic distributions loss
 
     Note that it is assumed that input is scaled to [-1, 1].
 
     Args:
-        y_hat (Tensor): Predicted output (B x C x T)
+        y_hat (Tensor): Predicted output (B x T x C)
         y (Tensor): Target (B x T x 1).
         num_classes (int): Number of classes
         log_scale_min (float): Log scale minimum value
@@ -71,6 +71,7 @@ def discretized_mix_logistic_loss(y_hat, y, num_classes=256,
     Returns
         Tensor: loss
     """
+    y_hat = y_hat.permute(0,2,1)
     assert y_hat.dim() == 3
     assert y_hat.size(1) % 3 == 0
     nr_mix = y_hat.size(1) // 3
@@ -146,7 +147,7 @@ def to_one_hot(tensor, n, fill_with=1.):
     return one_hot
 
 
-def sample_from_discretized_mix_logistic(y, log_scale_min=-7.0):
+def sample_from_discretized_mix_logistic(y, log_scale_min=hp.log_scale_min):
     """
     Sample from discretized mixture of logistic distributions
 

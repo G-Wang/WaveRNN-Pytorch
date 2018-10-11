@@ -7,7 +7,7 @@ class hparams:
     # 2. mixture [-1, 1]
     # 3. bits [0, 512]
     #
-    input_type = 'raw'
+    input_type = 'mixture'
     #
     # distribution type, currently supports only 'beta' and 'mixture'
     distribution = 'beta' # or "mixture"
@@ -55,7 +55,7 @@ class hparams:
     save_every_step = 5000
     evaluate_every_step = 1000
     # seq_len_factor can be adjusted to increase training sequence length (will increase GPU usage)
-    seq_len_factor = 10
+    seq_len_factor = 5
     seq_len = seq_len_factor * hop_size
     batch_size = 16
     grad_norm = 1.0

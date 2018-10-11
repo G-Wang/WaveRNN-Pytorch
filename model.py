@@ -142,6 +142,8 @@ class Model(nn.Module) :
 
         if hp.input_type == 'raw':
             return x
+        elif hp.input_type == 'mixture':
+            return x
         elif hp.input_type == 'bits':
             return F.log_softmax(x, dim=-1)
         else:

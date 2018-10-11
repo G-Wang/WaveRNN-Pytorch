@@ -26,7 +26,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from model import build_model
-from distributions import beta_mle_loss
+from distributions import beta_mle_loss, discretized_mix_logistic_loss
 from dataset import raw_collate, discrete_collate, AudiobookDataset
 from hparams import hparams as hp
 from lrschedule import noam_learning_rate_decay
@@ -125,6 +125,8 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
     # create loss and put on device
     if hp.input_type == 'raw':
         criterion = beta_mle_loss
+    elif hp.input_type == 'mixture':
+        criterion = discretized_mix_logistic_loss
     elif hp.input_type == "bits":
         criterion = F.nll_loss
     else:
@@ -183,6 +185,8 @@ if __name__=="__main__":
     os.makedirs(os.path.join(checkpoint_dir,'eval'), exist_ok=True)
     dataset = AudiobookDataset(data_root)
     if hp.input_type == 'raw':
+        collate_fn = raw_collate
+    elif hp.input_type == 'mixture':
         collate_fn = raw_collate
     elif hp.input_type == 'bits':
         collate_fn = discrete_collate
