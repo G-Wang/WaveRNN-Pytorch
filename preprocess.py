@@ -30,7 +30,7 @@ def get_wav_mel(path):
         return quant, mel
     elif hp.input_type == 'bits':
         quant = quantize(wav)
-        return quant, mel
+        return quant.astype(np.int), mel
     else:
         raise ValueError("hp.input_type {} not recognized".format(hp.input_type))
 
@@ -101,3 +101,4 @@ if __name__=="__main__":
 def test_get_wav_mel():
     wav, mel = get_wav_mel('sample.wav')
     print(wav.shape, mel.shape)
+    print(wav)

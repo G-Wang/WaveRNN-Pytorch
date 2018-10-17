@@ -27,6 +27,7 @@ from torch.utils.data import DataLoader
 
 from model import build_model
 from distributions import beta_mle_loss, discretized_mix_logistic_loss
+from loss_function import nll_loss
 from dataset import raw_collate, discrete_collate, AudiobookDataset
 from hparams import hparams as hp
 from lrschedule import noam_learning_rate_decay
@@ -91,7 +92,7 @@ def test_save_checkpoint():
     model = load_checkpoint(checkpoint_path+"checkpoint_step000000000.pth", model, optimizer, False)
 
 
-def evaluate_model(model, data_loader, checkpoint_dir, limit_eval_to=1):
+def evaluate_model(model, data_loader, checkpoint_dir, limit_eval_to=3):
     """evaluate model and save generated wav and plot
 
     """
@@ -128,7 +129,7 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
     elif hp.input_type == 'mixture':
         criterion = discretized_mix_logistic_loss
     elif hp.input_type == "bits":
-        criterion = F.nll_loss
+        criterion = nll_loss
     else:
         raise ValueError(f"input_type:{hp.input_type} not supported")
 
@@ -143,7 +144,10 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
             y = y.unsqueeze(-1)
             loss = criterion(y_hat, y)
             # calculate learning rate and update learning rate
-            current_lr = noam_learning_rate_decay(hp.initial_learning_rate, global_step, hp.noam_warm_up_steps)
+            if hp.fix_learning_rate:
+                current_lr = hp.fix_learning_rate
+            else:
+                current_lr = noam_learning_rate_decay(hp.initial_learning_rate, global_step, hp.noam_warm_up_steps)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = current_lr
             optimizer.zero_grad()
