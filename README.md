@@ -8,7 +8,16 @@ This repo refracts the code and adds slight modifications, and removes running o
 * support Fatcord's original quantized (9-bit) wav modelling
 
 # Audio Samples
-Some [audio samples](https://soundcloud.com/gary-wang-23/sets/wavernn-samples) on held-out testing data from LjSpeech. This is trained with the single Beta distribution.
+1. [Single beta distribution](https://soundcloud.com/gary-wang-23/sets/wavernn-samples) on held-out testing data from LjSpeech. This is trained with the single Beta distribution.
+
+2. [9-bit audio](https://soundcloud.com/gary-wang-23/sets/wave_rnn_9_bit_11k_step) on held-out testing data from LJSpeech. This model trains the fastest (this is around 130 epochs)
+
+# Pretrained Checkpoints
+1. [Single Beta Distribution](https://drive.google.com/open?id=138i0MtEkDqLM6fmBniQloEMtMlCHgJha) trained for 112k. Make sure to change `hparams.input_type` to `raw`.
+2. [9-bit quantized audio](https://drive.google.com/open?id=114Xk3P9dD-_e2W8jmiKSpOX1UGb7qem3) trained for 11k, or around 130 epochs, can be trained further. Make sure to change `hparams.input_type` to `bits`.
+
+
+
 
 # Requirements
 * Python 3
@@ -25,10 +34,11 @@ pip install -r requirements.txt
 ```
 
 # Usage
-## 1. Adusting Hyperparameters
+## 1. Adjusting Hyperparameters
 Before running scripts, one can adjust hyperparameters in `hparams.py`.
 
 Some hyperparameters that you might want to adjust:
+* `input_type` (best performing ones are currently `bits` and `raw`, see `hparams.py` for more details)
 * `batch_size`
 * `save_every_step` (checkpoint saving frequency)
 * `evaluate_every_step` (evaluation frequency)

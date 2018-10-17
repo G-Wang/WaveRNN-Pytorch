@@ -7,7 +7,7 @@ class hparams:
     # 2. mixture [-1, 1]
     # 3. bits [0, 512]
     #
-    input_type = 'mixture'
+    input_type = 'bits'
     #
     # distribution type, currently supports only 'beta' and 'mixture'
     distribution = 'beta' # or "mixture"
@@ -53,19 +53,19 @@ class hparams:
     batch_size = 16
     nepochs = 5000
     save_every_step = 5000
-    evaluate_every_step = 1000
+    evaluate_every_step = 5000
     # seq_len_factor can be adjusted to increase training sequence length (will increase GPU usage)
     seq_len_factor = 5
     seq_len = seq_len_factor * hop_size
     batch_size = 16
     grad_norm = 1.0
     #learning rate parameters
-    initial_learning_rate=1e-3
+    initial_learning_rate=5e-4
     noam_warm_up_steps = 2000 * (batch_size // 16)
     adam_beta1=0.9
     adam_beta2=0.999
     adam_eps=1e-8
     amsgrad=False
     weight_decay = 0.0
-    fix_learning_rate = None # modify if one wants to use a fixed learning rate
+    fix_learning_rate = 1e-5 # modify if one wants to use a fixed learning rate
     #-----------------
