@@ -13,7 +13,6 @@ import numpy as np
 import math, pickle, os
 from audio import *
 from hparams import hparams as hp
-#from nnmnkwii import preprocessing as P
 from utils import *
 from tqdm import tqdm
 
@@ -25,14 +24,15 @@ def get_wav_mel(path):
     mel = melspectrogram(wav)
     if hp.input_type == 'raw':
         return wav.astype(np.float32), mel
-    elif hp.input_type == 'mulaw-quantize':
-        quant = P.mulaw_quantize(wav, hp.mu)
-        return quant, mel
+    elif hp.input_type == 'mulaw':
+        quant = mulaw_quantize(wav, hp.mulaw_quantize_channels)
+        return quant.astype(np.int), mel
     elif hp.input_type == 'bits':
         quant = quantize(wav)
         return quant.astype(np.int), mel
     else:
         raise ValueError("hp.input_type {} not recognized".format(hp.input_type))
+
 
 
 

@@ -128,10 +128,10 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
         criterion = beta_mle_loss
     elif hp.input_type == 'mixture':
         criterion = discretized_mix_logistic_loss
-    elif hp.input_type == "bits":
+    elif hp.input_type in ["bits", "mulaw"]:
         criterion = nll_loss
     else:
-        raise ValueError(f"input_type:{hp.input_type} not supported")
+        raise ValueError("input_type:{} not supported".format(hp.input_type))
 
     
 
@@ -192,13 +192,13 @@ if __name__=="__main__":
         collate_fn = raw_collate
     elif hp.input_type == 'mixture':
         collate_fn = raw_collate
-    elif hp.input_type == 'bits':
+    elif hp.input_type in ['bits', 'mulaw']:
         collate_fn = discrete_collate
     else:
-        raise ValueError(f"input_type:{hp.input_type} not supported")
+        raise ValueError("input_type:{} not supported".format(hp.input_type))
     data_loader = DataLoader(dataset, collate_fn=collate_fn, shuffle=True, num_workers=0, batch_size=hp.batch_size)
     device = torch.device("cuda" if use_cuda else "cpu")
-    print(f"using device:{device}")
+    print("using device:{}".format(device))
 
     # build model, create optimizer
     model = build_model().to(device)
@@ -213,7 +213,7 @@ if __name__=="__main__":
         print("no checkpoint specified as --checkpoint argument, creating new model...")
     else:
         model = load_checkpoint(checkpoint_path, model, optimizer, False)
-        print(f"loading model from checkpoint:{checkpoint_path}")
+        print("loading model from checkpoint:{}".format(checkpoint_path))
         # set global_test_step to True so we don't evaluate right when we load in the model
         global_test_step = True
 
@@ -236,10 +236,10 @@ def test_eval():
     elif hp.input_type == 'bits':
         collate_fn = discrete_collate
     else:
-        raise ValueError(f"input_type:{hp.input_type} not supported")
+        raise ValueError("input_type:{} not supported".format(hp.input_type))
     data_loader = DataLoader(dataset, collate_fn=collate_fn, shuffle=True, num_workers=0, batch_size=hp.batch_size)
     device = torch.device("cuda" if use_cuda else "cpu")
-    print(f"using device:{device}")
+    print("using device:{}".format(device))
 
     # build model, create optimizer
     model = build_model().to(device)

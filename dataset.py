@@ -5,6 +5,7 @@ import os
 import torch
 from torch.utils.data import DataLoader, Dataset
 from hparams import hparams as hp
+from utils import mulaw_quantize, inv_mulaw_quantize
 import pickle
 
 
@@ -78,15 +79,17 @@ def discrete_collate(batch) :
     
     mels = torch.FloatTensor(mels)
     coarse = torch.LongTensor(coarse)
-    
-    x_input = 2 * coarse[:, :hp.seq_len].float() / (2**hp.bits - 1.) - 1.
+    if hp.input_type == 'bits':
+        x_input = 2 * coarse[:, :hp.seq_len].float() / (2**hp.bits - 1.) - 1.
+    elif hp.input_type == 'mulaw':
+        x_input = inv_mulaw_quantize(coarse[:, :hp.seq_len], hp.mulaw_quantize_channels)
     
     y_coarse = coarse[:, 1:]
     
     return x_input, mels, y_coarse
 
 
-def test_collate():
+def no_test_raw_collate():
     import matplotlib.pyplot as plt
     from test_utils import plot, plot_spec
     data_id_path = "data_dir/"
@@ -99,6 +102,28 @@ def test_collate():
     print(len(dataset))
 
     data_loader = DataLoader(dataset, collate_fn=raw_collate, batch_size=32, 
+                         num_workers=0, shuffle=True)
+
+    x, m, y = next(iter(data_loader))
+    print(x.shape, m.shape, y.shape)
+    plot(x.numpy()[0]) 
+    plot(y.numpy()[0])
+    plot_spec(m.numpy()[0])
+
+
+def test_discrete_collate():
+    import matplotlib.pyplot as plt
+    from test_utils import plot, plot_spec
+    data_id_path = "data_dir/"
+    data_path = "data_dir/"
+    print(hp.seq_len)
+    
+    with open('{}dataset_ids.pkl'.format(data_id_path), 'rb') as f:
+        dataset_ids = pickle.load(f)
+    dataset = AudiobookDataset(data_path)
+    print(len(dataset))
+
+    data_loader = DataLoader(dataset, collate_fn=discrete_collate, batch_size=32, 
                          num_workers=0, shuffle=True)
 
     x, m, y = next(iter(data_loader))

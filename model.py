@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from hparams import hparams as hp
 from torch.utils.data import DataLoader, Dataset
 from distributions import sample_from_beta_dist, sample_from_discretized_mix_logistic
-from utils import num_params
+from utils import num_params, mulaw_quantize, inv_mulaw_quantize
 
 from tqdm import tqdm
 import numpy as np
@@ -93,6 +93,8 @@ class Model(nn.Module) :
         elif hp.input_type == 'mixture':
             # mixture requires multiple of 3, default at 10 component mixture, i.e 3 x 10 = 30
             self.n_classes = 30
+        elif hp.input_type == 'mulaw':
+            self.n_classes = hp.mulaw_quantize_channels
         elif hp.input_type == 'bits':
             self.n_classes = 2**bits
         else:
@@ -144,7 +146,7 @@ class Model(nn.Module) :
             return x
         elif hp.input_type == 'mixture':
             return x
-        elif hp.input_type == 'bits':
+        elif hp.input_type == 'bits' or hp.input_type == 'mulaw':
             return F.log_softmax(x, dim=-1)
         else:
             raise ValueError("input_type: {hp.input_type} not supported")
@@ -207,10 +209,87 @@ class Model(nn.Module) :
                     posterior = F.softmax(x, dim=1).view(-1)
                     distrib = torch.distributions.Categorical(posterior)
                     sample = 2 * distrib.sample().float() / (self.n_classes - 1.) - 1.
+                elif hp.input_type == 'mulaw':
+                    posterior = F.softmax(x, dim=1).view(-1)
+                    distrib = torch.distributions.Categorical(posterior)
+                    sample = inv_mulaw_quantize(distrib.sample(), hp.mulaw_quantize_channels, True)
                 output.append(sample.view(-1))
                 x = torch.FloatTensor([[sample]]).cuda()
         output = torch.stack(output).cpu().numpy()
         self.train()
+        return output
+
+
+    def batch_generate(self, mels) :
+        """mel should be of shape [batch_size x 80 x mel_length]
+        """
+        self.eval()
+        output = []
+        rnn1 = self.get_gru_cell(self.rnn1)
+        rnn2 = self.get_gru_cell(self.rnn2)
+        b_size = mels.shape[0]
+        assert len(mels.shape) == 3, "mels should have shape [batch_size x 80 x mel_length]"
+        
+        with torch.no_grad() :
+            x = torch.zeros(b_size, 1).cuda()
+            h1 = torch.zeros(b_size, self.rnn_dims).cuda()
+            h2 = torch.zeros(b_size, self.rnn_dims).cuda()
+            
+            mels = torch.FloatTensor(mels).cuda()
+            mels, aux = self.upsample(mels)
+            
+            aux_idx = [self.aux_dims * i for i in range(5)]
+            a1 = aux[:, :, aux_idx[0]:aux_idx[1]]
+            a2 = aux[:, :, aux_idx[1]:aux_idx[2]]
+            a3 = aux[:, :, aux_idx[2]:aux_idx[3]]
+            a4 = aux[:, :, aux_idx[3]:aux_idx[4]]
+            
+            seq_len = mels.size(1)
+            
+            for i in tqdm(range(seq_len)) :
+
+                m_t = mels[:, i, :]
+                a1_t = a1[:, i, :]
+                a2_t = a2[:, i, :]
+                a3_t = a3[:, i, :]
+                a4_t = a4[:, i, :]
+                
+                x = torch.cat([x, m_t, a1_t], dim=1)
+                x = self.I(x)
+                h1 = rnn1(x, h1)
+                
+                x = x + h1
+                inp = torch.cat([x, a2_t], dim=1)
+                h2 = rnn2(inp, h2)
+                
+                x = x + h2
+                x = torch.cat([x, a3_t], dim=1)
+                x = F.relu(self.fc1(x))
+                
+                x = torch.cat([x, a4_t], dim=1)
+                x = F.relu(self.fc2(x))
+                x = self.fc3(x)
+                if hp.input_type == 'raw':
+                    sample = sample_from_beta_dist(x.unsqueeze(0))
+                elif hp.input_type == 'mixture':
+                    sample = sample_from_discretized_mix_logistic(x.unsqueeze(-1),hp.log_scale_min)
+                elif hp.input_type == 'bits':
+                    posterior = F.softmax(x, dim=1).view(b_size, -1)
+                    distrib = torch.distributions.Categorical(posterior)
+                    sample = 2 * distrib.sample().float() / (self.n_classes - 1.) - 1.
+                elif hp.input_type == 'mulaw':
+                    posterior = F.softmax(x, dim=1).view(b_size, -1)
+                    distrib = torch.distributions.Categorical(posterior)
+                    print(type(distrib.sample()))
+                    sample = inv_mulaw_quantize(distrib.sample(), hp.mulaw_quantize_channels, True)
+                output.append(sample.view(-1))
+                x = sample.view(b_size,1)
+        output = torch.stack(output).cpu().numpy()
+        self.train()
+        # output is a batch of wav segments of shape [batch_size x seq_len]
+        # will need to merge into one wav of size [batch_size * seq_len]
+        assert output.shape[1] == b_size
+        output = (output.swapaxes(1,0)).reshape(-1)
         return output
     
     def get_gru_cell(self, gru) :
@@ -232,6 +311,8 @@ def build_model():
         print("building model with mixture of logistic output")
     elif hp.input_type == 'bits':
         print("building model with quantized bit audio")
+    elif hp.input_type == 'mulaw':
+        print("building model with quantized mulaw encoding")
     else:
         raise ValueError('input_type provided not supported')
     model = Model(hp.rnn_dims, hp.fc_dims, hp.bits,
@@ -240,8 +321,18 @@ def build_model():
 
     return model 
 
-def test_build_model():
+def no_test_build_model():
     model = Model(hp.rnn_dims, hp.fc_dims, hp.bits,
         hp.pad, hp.upsample_factors, hp.num_mels,
         hp.compute_dims, hp.res_out_dims, hp.res_blocks).cuda()
     print(vars(model))
+
+
+def test_batch_generate():
+    model = Model(hp.rnn_dims, hp.fc_dims, hp.bits,
+        hp.pad, hp.upsample_factors, hp.num_mels,
+        hp.compute_dims, hp.res_out_dims, hp.res_blocks).cuda()
+    print(vars(model))
+    batch_mel = torch.rand(3, 80, 100)
+    output = model.batch_generate(batch_mel)
+    print(output.shape)
