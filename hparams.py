@@ -8,7 +8,7 @@ class hparams:
     # 3. bits [0, 512]
     # 4. mulaw[0, mulaw_quantize_channels]
     #
-    input_type = 'mulaw'
+    input_type = 'raw'
     #
     # distribution type, currently supports only 'beta' and 'mixture'
     distribution = 'beta' # or "mixture"
@@ -60,11 +60,16 @@ class hparams:
     # seq_len_factor can be adjusted to increase training sequence length (will increase GPU usage)
     seq_len_factor = 5
     seq_len = seq_len_factor * hop_size
-    batch_size = 16
     grad_norm = 1.0
     #learning rate parameters
     initial_learning_rate=1e-3
+    lr_schedule_type = 'step' # or 'noam'
+    # for noam learning rate schedule
     noam_warm_up_steps = 2000 * (batch_size // 16)
+    # for step learning rate schedule
+    step_gamma = 0.5
+    lr_step_interval = 20000
+
     adam_beta1=0.9
     adam_beta2=0.999
     adam_eps=1e-8

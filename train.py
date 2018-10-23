@@ -30,7 +30,7 @@ from distributions import beta_mle_loss, discretized_mix_logistic_loss
 from loss_function import nll_loss
 from dataset import raw_collate, discrete_collate, AudiobookDataset
 from hparams import hparams as hp
-from lrschedule import noam_learning_rate_decay
+from lrschedule import noam_learning_rate_decay, step_learning_rate_decay
 
 global_step = 0
 global_epoch = 0
@@ -146,6 +146,8 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
             # calculate learning rate and update learning rate
             if hp.fix_learning_rate:
                 current_lr = hp.fix_learning_rate
+            elif hp.lr_schedule_type == 'step':
+                current_lr = step_learning_rate_decay(hp.initial_learning_rate, global_step, hp.step_gamma, hp.lr_step_interval)
             else:
                 current_lr = noam_learning_rate_decay(hp.initial_learning_rate, global_step, hp.noam_warm_up_steps)
             for param_group in optimizer.param_groups:
@@ -207,6 +209,13 @@ if __name__=="__main__":
         hp.adam_beta1, hp.adam_beta2),
         eps=hp.adam_eps, weight_decay=hp.weight_decay,
         amsgrad=hp.amsgrad)
+
+    if hp.fix_learning_rate:
+        print("using fixed learning rate of :{}".format(hp.fix_learning_rate))
+    elif hp.lr_schedule_type == 'step':
+        print("using exponential learning rate decay")
+    elif hp.lr_schedule_type == 'noam':
+        print("using noam learning rate decay")
 
     # load checkpoint
     if checkpoint_path is None:
