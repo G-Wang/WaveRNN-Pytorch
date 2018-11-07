@@ -26,7 +26,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from model import build_model
-from distributions import beta_mle_loss, discretized_mix_logistic_loss
+from distributions import *
 from loss_function import nll_loss
 from dataset import raw_collate, discrete_collate, AudiobookDataset
 from hparams import hparams as hp
@@ -92,7 +92,7 @@ def test_save_checkpoint():
     model = load_checkpoint(checkpoint_path+"checkpoint_step000000000.pth", model, optimizer, False)
 
 
-def evaluate_model(model, data_loader, checkpoint_dir, limit_eval_to=3):
+def evaluate_model(model, data_loader, checkpoint_dir, limit_eval_to=5):
     """evaluate model and save generated wav and plot
 
     """
@@ -125,7 +125,10 @@ def train_loop(device, model, data_loader, optimizer, checkpoint_dir):
     """
     # create loss and put on device
     if hp.input_type == 'raw':
-        criterion = beta_mle_loss
+        if hp.distribution == 'beta':
+            criterion = beta_mle_loss
+        elif hp.distribution == 'gaussian':
+            criterion = gaussian_loss
     elif hp.input_type == 'mixture':
         criterion = discretized_mix_logistic_loss
     elif hp.input_type in ["bits", "mulaw"]:

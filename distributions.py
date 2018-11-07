@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.distributions import Beta
+from torch.distributions import Beta, Normal
 from hparams import hparams as hp
 
 def sample_from_beta_dist(y_hat):
@@ -186,12 +186,48 @@ def sample_from_discretized_mix_logistic(y, log_scale_min=hp.log_scale_min):
     return x
 
 
+# add gaussian from clarinet implementation:https://raw.githubusercontent.com/ksw0306/ClariNet/master/loss.py
+def gaussian_loss(y_hat, y, log_std_min=-7.0, reduce=True):
+    """y_hat (batch_size x seq_len x 2)
+        y (batch_size x seq_len x 1)
+    """
+    assert y_hat.dim() == 3
+    assert y_hat.size(2) == 2
+
+    mean = y_hat[:, :, :1]
+    log_std = torch.clamp(y_hat[:, :, 1:], min=log_std_min)
+
+    log_probs = -0.5 * (- math.log(2.0 * math.pi) - 2. * log_std - torch.pow(y - mean, 2) * torch.exp((-2.0 * log_std)))
+    
+    if reduce:
+        return log_probs.squeeze().mean()
+    else:
+        return log_probs.squeeze()
+
+
+def sample_from_gaussian(y_hat, log_std_min=-7.0, scale_factor=1.):
+    """y_hat (batch_size x seq_len x 2)
+        y (batch_size x seq_len x 1)
+    """
+    assert y_hat.size(2) == 2
+
+    mean = y_hat[:, :, :1]
+    log_std = torch.clamp(y_hat[:, :, 1:], min=log_std_min)
+    dist = Normal(mean, torch.exp(log_std))
+    sample = dist.sample()
+    sample = torch.clamp(torch.clamp(sample, min=-scale_factor), max=scale_factor)
+    del dist
+    return sample
+
+
 
 
 
 def test_gaussian():
-    y_hat = torch.rand(32, 30, 100)
-    y = torch.rand(32, 100, 1)
-    sample = sample_from_discretized_mix_logistic(y_hat)
-    loss = discretized_mix_logistic_loss(y_hat, y, num_classes=65536)
-    print(y_hat.shape, loss/(32*100), sample.shape, sample.max(), sample.min())
+
+    y_hat = torch.rand(16, 120, 2)
+    y_true = torch.rand(16, 120, 1)
+    out = sample_from_gaussian(y_hat)
+    loss = gaussian_loss(y_hat, y_true)
+    loss_mean = loss.mean()
+    print(out.shape, loss.shape, loss_mean.item())

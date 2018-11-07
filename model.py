@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from hparams import hparams as hp
 from torch.utils.data import DataLoader, Dataset
-from distributions import sample_from_beta_dist, sample_from_discretized_mix_logistic
+from distributions import *
 from utils import num_params, mulaw_quantize, inv_mulaw_quantize
 
 from tqdm import tqdm
@@ -202,7 +202,10 @@ class Model(nn.Module) :
                 x = F.relu(self.fc2(x))
                 x = self.fc3(x)
                 if hp.input_type == 'raw':
-                    sample = sample_from_beta_dist(x.unsqueeze(0))
+                    if hp.distribution == 'beta':
+                        sample = sample_from_beta_dist(x.unsqueeze(0))
+                    elif hp.distribution == 'gaussian':
+                        sample = sample_from_gaussian(x.unsqueeze(0))
                 elif hp.input_type == 'mixture':
                     sample = sample_from_discretized_mix_logistic(x.unsqueeze(-1),hp.log_scale_min)
                 elif hp.input_type == 'bits':
