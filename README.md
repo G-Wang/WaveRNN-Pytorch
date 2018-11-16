@@ -12,9 +12,12 @@ This repo refracts the code and adds slight modifications, and removes running o
 
 2. [9-bit audio](https://soundcloud.com/gary-wang-23/sets/wave_rnn_9_bit_11k_step) on held-out testing data from LJSpeech. This model trains the fastest (this is around 130 epochs)
 
+3. [10-bit audio](https://soundcloud.com/gary-wang-23/sets/wavernn-pytorch-10-bit-raw-audio-200k) on held-out testing data from LJSpeech. This model sounds and trains pretty close to 9 bit. We want the higher bit the better.
+
 # Pretrained Checkpoints
 1. [Single Beta Distribution](https://drive.google.com/open?id=138i0MtEkDqLM6fmBniQloEMtMlCHgJha) trained for 112k. Make sure to change `hparams.input_type` to `raw`.
 2. [9-bit quantized audio](https://drive.google.com/open?id=114Xk3P9dD-_e2W8jmiKSpOX1UGb7qem3) trained for 11k, or around 130 epochs, can be trained further. Make sure to change `hparams.input_type` to `bits`.
+3. [10-bit quantized audio](https://drive.google.com/open?id=1djWm62tHIndopyS5spkHf68lI6-h5a3H). To ensure your model is built properly, download the `hparams.py` [here](https://drive.google.com/open?id=1nXSW4u01bEbUkRW4Vd3IQ6soBAXPg6aw), either replace this with your local `hparams.py` file or note and update any changes.
 
 
 
