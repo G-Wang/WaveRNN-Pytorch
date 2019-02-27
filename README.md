@@ -41,6 +41,7 @@ pip install -r requirements.txt
 Before running scripts, one can adjust hyperparameters in `hparams.py`.
 
 Some hyperparameters that you might want to adjust:
+* `fix_learning_rate` The model is robust enough to learn well with a fix learning rate of `1e-4`, I suggest you try this setting for fastest training, you can decrease this down to `5e-6` for final step refinement. Set this to `None` to train with learning rate schedule instead
 * `input_type` (best performing ones are currently `bits` and `raw`, see `hparams.py` for more details)
 * `batch_size`
 * `save_every_step` (checkpoint saving frequency)
