@@ -1,6 +1,9 @@
 # WaveRNN-Pytorch
 This repository contains Fatcord's [Alternative](https://github.com/fatchord/WaveRNN) WaveRNN (Faster training), which contains a fast-training, small GPU memory implementation of WaveRNN vocoder.
 
+# Model Pruning and Real Time CPU Inference
+See geneing's awesome fork that has model pruning, export to C++ and real time inference on CPU: https://github.com/geneing/WaveRNN-Pytorch.
+
 This repo refracts the code and adds slight modifications, and removes running on Jupyter notebook.
 # Highlights
 * support raw audio wav modelling (via a single Beta Distribution)
