@@ -8,11 +8,13 @@ This repo refracts the code and adds slight modifications, and removes running o
 * support Fatcord's original quantized (9-bit) wav modelling
 
 # Audio Samples
-1. [Single beta distribution](https://soundcloud.com/gary-wang-23/sets/wavernn-samples) on held-out testing data from LjSpeech. This is trained with the single Beta distribution.
+1. [Obama & Bernie Sanders](https://soundcloud.com/gary-wang-23/sets/obama_bernie_fun) See this repo in action!
 
-2. [9-bit audio](https://soundcloud.com/gary-wang-23/sets/wave_rnn_9_bit_11k_step) on held-out testing data from LJSpeech. This model trains the fastest (this is around 130 epochs)
+2. [10-bit audio](https://soundcloud.com/gary-wang-23/sets/wavernn-pytorch-10-bit-raw-audio-200k) on held-out testing data from LJSpeech. This model sounds and trains pretty close to 9 bit. We want the higher bit the better.
 
-3. [10-bit audio](https://soundcloud.com/gary-wang-23/sets/wavernn-pytorch-10-bit-raw-audio-200k) on held-out testing data from LJSpeech. This model sounds and trains pretty close to 9 bit. We want the higher bit the better.
+3. [9-bit audio](https://soundcloud.com/gary-wang-23/sets/wave_rnn_9_bit_11k_step) on held-out testing data from LJSpeech. This model trains the fastest (this is around 130 epochs)
+
+4. [Single beta distribution](https://soundcloud.com/gary-wang-23/sets/wavernn-samples) on held-out testing data from LjSpeech. This is trained with the single Beta distribution.
 
 # Pretrained Checkpoints
 1. [Single Beta Distribution](https://drive.google.com/open?id=138i0MtEkDqLM6fmBniQloEMtMlCHgJha) trained for 112k. Make sure to change `hparams.input_type` to `raw`.
