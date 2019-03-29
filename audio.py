@@ -102,6 +102,21 @@ def quantize(x):
     return quant.astype(np.int)
 
 
+# mulaw encoding and decoding
+def encode_mu_law(x, mu) :
+    mu = mu - 1
+    fx = np.sign(x) * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)
+    return np.floor((fx + 1) / 2 * mu + 0.5)
+
+
+def decode_mu_law(y, mu, from_labels=True) :
+    # TODO : get rid of log2 - makes no sense
+    if from_labels : y = label_2_float(y, math.log2(mu))
+    mu = mu - 1
+    x = np.sign(y) / mu * ((1 + mu) ** np.abs(y) - 1)
+    return x
+
+
 # testing
 def test_everything():
     wav = np.random.randn(12000,)
