@@ -95,7 +95,7 @@ class Model(nn.Module) :
             self.n_classes = 30
         elif hp.input_type == 'mulaw':
             self.n_classes = hp.mulaw_quantize_channels
-        elif hp.input_type == 'bits':
+        elif hp.input_type == 'bits' or 'mulaw':
             self.n_classes = 2**bits
         else:
             raise ValueError("input_type: {hp.input_type} not supported")
@@ -142,14 +142,7 @@ class Model(nn.Module) :
 
         x = self.fc3(x)
 
-        if hp.input_type == 'raw':
-            return x
-        elif hp.input_type == 'mixture':
-            return x
-        elif hp.input_type == 'bits' or hp.input_type == 'mulaw':
-            return F.log_softmax(x, dim=-1)
-        else:
-            raise ValueError("input_type: {hp.input_type} not supported")
+        return x
 
 
     def preview_upsampling(self, mels) :
