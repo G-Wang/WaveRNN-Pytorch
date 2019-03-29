@@ -25,7 +25,7 @@ def get_wav_mel(path):
     if hp.input_type == 'raw':
         return wav.astype(np.float32), mel
     elif hp.input_type == 'mulaw':
-        quant = mulaw_quantize(wav, hp.mulaw_quantize_channels)
+        quant = encode_mu_law(wav, 2**hp.bits)
         return quant.astype(np.int), mel
     elif hp.input_type == 'bits':
         quant = quantize(wav)
