@@ -18,8 +18,6 @@ class hparams:
     # for Fatcord's original 9 bit audio, specify the audio bit rate. Note this corresponds to network output
     # of size 2**bits, so 9 bits would be 512 output, etc.
     bits = 10
-    # for mu-law
-    mulaw_quantize_channels = 512
     # note: r9r9's deepvoice3 preprocessing is used instead of Fatcord's original.
     #--------------     
     # audio processing parameters
