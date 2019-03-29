@@ -93,14 +93,6 @@ def _denormalize(S):
     return (np.clip(S, 0, 1) * -hparams.min_level_db) + hparams.min_level_db
 
 
-# Fatcord's preprocessing
-def quantize(x):
-    """quantize audio signal
-
-    """
-    quant = (x + 1.) * (2**hparams.bits - 1) / 2
-    return quant.astype(np.int)
-
 
 # mulaw encoding and decoding
 def encode_mu_law(x, mu) :
@@ -117,11 +109,19 @@ def decode_mu_law(y, mu, from_labels=True) :
     return x
 
 
+def quant_2_float(x, bits) :
+    return 2 * x / (2**bits - 1.) - 1.
+
+
+def float_2_quant(x, bits) :
+    return (x + 1.) * (2**bits - 1) / 2
+
+
 # testing
 def test_everything():
     wav = np.random.randn(12000,)
     mel = melspectrogram(wav)
     spec = spectrogram(wav)
-    quant = quantize(wav)
+    quant = quant_2_float(wav)
     print(wav.shape, mel.shape, spec.shape, quant.shape)
     print(quant.max(), quant.min(), mel.max(), mel.min(), spec.max(), spec.min())

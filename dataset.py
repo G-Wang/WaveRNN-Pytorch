@@ -5,7 +5,7 @@ import os
 import torch
 from torch.utils.data import DataLoader, Dataset
 from hparams import hparams as hp
-from utils import mulaw_quantize, inv_mulaw_quantize
+from audio import encode_mu_law, decode_mu_law, quant_2_float, float_2_quant
 import pickle
 
 

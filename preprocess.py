@@ -28,7 +28,7 @@ def get_wav_mel(path):
         quant = encode_mu_law(wav, 2**hp.bits)
         return quant.astype(np.int), mel
     elif hp.input_type == 'bits':
-        quant = quantize(wav)
+        quant = quant_2_float(wav, hp.bits)
         return quant.astype(np.int), mel
     else:
         raise ValueError("hp.input_type {} not recognized".format(hp.input_type))
